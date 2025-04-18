@@ -1,0 +1,120 @@
+package com.example.simplecalculator;
+package com.example.simplecalculator;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.button.MaterialButton;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    // UI fields
+    private TextView resultTv, solutionTv;
+    private MaterialButton
+            buttonC, buttonBrackOpen, buttonBrackClose,
+            buttonDivide, buttonMultiply, buttonPlus, buttonMinus, buttonEquals,
+            button0, button1, button2, button3, button4, button5, button6, button7, button8, button9,
+            buttonAC, buttonDot;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // find the TextViews
+        resultTv   = findViewById(R.id.result_tv);
+        solutionTv = findViewById(R.id.solution_tv);
+
+        // find and hook up every button
+        buttonC          = findButton(R.id.button_c);
+        buttonBrackOpen  = findButton(R.id.button_open_bracket);
+        buttonBrackClose = findButton(R.id.button_close_bracket);
+        buttonDivide     = findButton(R.id.button_divide);
+        buttonMultiply   = findButton(R.id.button_multiply);
+        buttonPlus       = findButton(R.id.button_plus);
+        buttonMinus      = findButton(R.id.button_minus);
+        buttonEquals     = findButton(R.id.button_equals);
+
+        button0 = findButton(R.id.button_0);
+        button1 = findButton(R.id.button_1);
+        button2 = findButton(R.id.button_2);
+        button3 = findButton(R.id.button_3);
+        button4 = findButton(R.id.button_4);
+        button5 = findButton(R.id.button_5);
+        button6 = findButton(R.id.button_6);
+        button7 = findButton(R.id.button_7);
+        button8 = findButton(R.id.button_8);
+        button9 = findButton(R.id.button_9);
+
+        buttonAC  = findButton(R.id.button_ac);
+        buttonDot = findButton(R.id.button_dot);
+    }
+
+    /**
+     * Helper: find the button by ID, set this as its click listener,
+     * and return it so we can assign to our fields.
+     */
+    private MaterialButton findButton(int id) {
+        MaterialButton btn = findViewById(id);
+        btn.setOnClickListener(this);
+        return btn;
+    }
+
+    @Override
+    public void onClick(View view) {
+        MaterialButton button = (MaterialButton) view;
+        String buttonText    = button.getText().toString();
+        String dataToCalculate = solutionTv.getText().toString();
+
+        switch (buttonText) {
+            case "AC":
+                solutionTv.setText("");
+                resultTv.setText("0");
+                return;
+            case "=":
+                solutionTv.setText(resultTv.getText());
+                return;
+            case "C":
+                if (!dataToCalculate.isEmpty()) {
+                    dataToCalculate = dataToCalculate.substring(0, dataToCalculate.length() - 1);
+                }
+                break;
+            default:
+                dataToCalculate += buttonText;
+        }
+
+        solutionTv.setText(dataToCalculate);
+        String finalResult = calculateResult(dataToCalculate);
+
+        if (!"Err".equals(finalResult)) {
+            resultTv.setText(finalResult);
+        }
+    }
+
+    /**
+     * Use Rhino to evaluate the math expression.
+     */
+    private String calculateResult(String expr) {
+        try {
+            Context rhino = Context.enter();
+            rhino.setOptimizationLevel(-1);
+            Scriptable scope = rhino.initStandardObjects();
+            Object result = rhino.evaluateString(scope, expr, "JavaScript", 1, null);
+            String resStr = result.toString();
+            // drop trailing ".0"
+            if (resStr.endsWith(".0")) {
+                resStr = resStr.substring(0, resStr.length() - 2);
+            }
+            return resStr;
+        } catch (Exception e) {
+            return "Err";
+        } finally {
+            Context.exit();
+        }
+    }
+}
